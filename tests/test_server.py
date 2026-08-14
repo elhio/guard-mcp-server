@@ -5,6 +5,7 @@ Tests for server construction, the tool surface, and the config resource.
 from __future__ import annotations
 
 import json
+import os
 
 import pytest
 from fastmcp.client import Client
@@ -140,7 +141,7 @@ def test_settings_read_media_roots_from_a_delimited_string(monkeypatch, tmp_path
     """Verify that `media_roots` correctly parses a delimited string of paths."""
     other = tmp_path / "other"
     other.mkdir()
-    monkeypatch.setenv("GUARD_MCP_MEDIA_ROOTS", f"{tmp_path}:{other}")
+    monkeypatch.setenv("GUARD_MCP_MEDIA_ROOTS", f"{tmp_path}{os.pathsep}{other}")
     reset_settings()
 
     settings = GuardMCPSettings()
