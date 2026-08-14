@@ -177,6 +177,49 @@ async def test_list_activities_reports_the_next_page(client):
 
 
 @respx.mock
+async def test_the_last_page_ends_the_walk(client):
+    """
+    The final page of a multi-page walk must not advertise another one.
+
+    The client's own `Page.has_more` compares one page against the total, which is only
+    right at skip=0. Trusting it here left `has_more` True forever and `next_skip` stuck
+    at the same offset, so an agent paging to the end looped.
+    """
+    items = [
+        create_response(id=f"0000000{n}-0000-0000-0000-000000000000") for n in range(2)
+    ]
+    for item in items:
+        item.pop("upload_data")
+    respx.get(ACTIVITIES_URL).mock(
+        return_value=httpx.Response(200, json=page_response(items, count=10))
+    )
+
+    async with client as session:
+        result = await session.call_tool("list_activities", {"limit": 2, "skip": 8})
+
+    data = result.structured_content
+    assert data["count"] == 10
+    assert data["has_more"] is False
+    assert data["next_skip"] is None
+
+
+@respx.mock
+async def test_a_page_past_the_end_stops(client):
+    """An empty page beyond the last record reports no further pages."""
+    respx.get(ACTIVITIES_URL).mock(
+        return_value=httpx.Response(200, json=page_response([], count=10))
+    )
+
+    async with client as session:
+        result = await session.call_tool("list_activities", {"limit": 2, "skip": 10})
+
+    data = result.structured_content
+    assert data["items"] == []
+    assert data["has_more"] is False
+    assert data["next_skip"] is None
+
+
+@respx.mock
 async def test_list_activities_caps_the_page_size(client):
     """Verify that list_activities enforces the maximum API page size limit of 100."""
     route = respx.get(ACTIVITIES_URL).mock(

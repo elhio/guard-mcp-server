@@ -48,10 +48,10 @@ means more strongly detected, plus the highest of those scores. A score is a
 measurement, not a decision: these tools report what the models found and do not
 classify media as acceptable or unacceptable.
 
-A cloud analysis can take a minute for a video. This server may run analyze_media as a
-background task, so the call returns when the result is ready rather than blocking. If
-it times out anyway, the error names an activity id: call get_activity with it later to
-collect the result.
+A cloud analysis can take a minute for a video. analyze_media can run as a background
+task, so a client that asks for one gets a handle straight away and collects the result
+when it is ready, rather than waiting. If the wait times out either way, the error names
+an activity id: call get_activity with it later to collect the result.
 
 Use estimate_tokens first when cost matters. Use submit_feedback when a human has
 established that a score was wrong.
@@ -161,7 +161,6 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     """
     settings = get_settings()
     parser = argparse.ArgumentParser(
-        prog="guard-mcp",
         description="MCP server for Guard visual content moderation.",
     )
     parser.add_argument(

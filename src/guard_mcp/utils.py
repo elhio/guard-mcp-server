@@ -58,18 +58,26 @@ def to_page(page: Any, *, skip: int, drop: Iterable[str] = ()) -> ListPage:
 
     Returns:
         A `ListPage` carrying the trimmed records and the offset for the next page.
+        `next_skip` is `None` on the last page, which is how an agent knows to stop.
 
-    Note:
+    Notes:
         `Page` implements `__iter__` over its items, so `dict(page)` and
         `list(page)` mean different things. This uses the item list explicitly.
+
+        The client's own `Page.has_more` is deliberately not used. It compares the size
+        of one page against the total, which only answers the question for the first
+        page; past `skip=0` it stays True on the last page and an agent paging to the
+        end never stops. Comparing `skip + len(items)` against the total is what the
+        client's own documentation tells callers to do instead.
     """
     items = [to_dict(item, drop=drop) for item in page.data]
-    has_more = bool(getattr(page, "has_more", False))
+    seen = skip + len(items)
+    has_more = seen < page.count
     return ListPage(
         items=items,
         count=page.count,
         has_more=has_more,
-        next_skip=skip + len(items) if has_more else None,
+        next_skip=seen if has_more else None,
     )
 
 

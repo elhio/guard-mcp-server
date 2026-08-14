@@ -87,14 +87,14 @@ def register(mcp: FastMCP, settings: Optional[GuardMCPSettings] = None) -> None:
             the activity that produced them.
 
         Notes:
-            When `enable_tasks` is True, FastMCP intercepts this execution. The agent
-            will receive a task run ID immediately instead of blocking, and must poll
-            the task status to retrieve the final `AnalysisResult`.
+            This tool can run as a background task, and the calling client decides per
+            call. Ask for one and the call returns a task handle immediately, to be
+            polled for the `AnalysisResult`; ask for nothing and the result comes back
+            directly, which for a video may take a minute or more.
 
             Task ids differ between engines. The on-device engine derives its ids from
             the task label, so they will not match the ids a space reports.
         """
-        settings = get_settings()
         client = handle.require()
 
         await progress.set_total(3)

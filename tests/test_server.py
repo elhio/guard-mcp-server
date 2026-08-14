@@ -9,7 +9,7 @@ import json
 import pytest
 from fastmcp.client import Client
 
-from conftest import API_KEY
+from conftest import API_KEY, png_bytes
 from guard_mcp.server import create_server
 from guard_mcp.settings import GuardMCPSettings, reset_settings
 
@@ -105,6 +105,35 @@ async def test_local_engine_needs_no_api_key(settings, monkeypatch):
     payload = json.loads(contents[0].text)
     assert payload["guard_client"]["ready"] is True
     assert payload["guard_client"]["engine"] == "local"
+
+
+async def test_injected_settings_govern_the_media_check(cloud_env, tmp_path):
+    """
+    Settings handed to `create_server` must reach the tool that reads media.
+
+    `analyze_media` used to call `get_settings()` in its own body, so the settings
+    argument silently did not apply to it. Nothing here installs the settings globally,
+    which is what makes the difference visible: the process settings would allow the
+    working directory, and the injected ones must not.
+
+    `enable_tasks` is off for the reason every test here has it off: the Docket worker
+    keeps a heartbeat scheduled past the end of the session and pytest-asyncio waits on
+    it forever.
+    """
+    allowed = tmp_path / "allowed"
+    allowed.mkdir()
+    outside = tmp_path / "photo.png"
+    outside.write_bytes(png_bytes())
+
+    server = create_server(
+        GuardMCPSettings(
+            media_roots=[allowed], mask_error_details=False, enable_tasks=False
+        )
+    )
+
+    async with Client(server) as session:
+        with pytest.raises(Exception, match="not allowed"):
+            await session.call_tool("analyze_media", {"path": str(outside)})
 
 
 def test_settings_read_media_roots_from_a_delimited_string(monkeypatch, tmp_path):

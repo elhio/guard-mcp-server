@@ -30,6 +30,49 @@ def test_the_stack_ends_with_guard_translation(settings):
     assert any(isinstance(item, ActivityRateLimitMiddleware) for item in stack)
 
 
+async def test_deliberate_tool_errors_are_not_relabelled(cloud_env, tmp_path, png):
+    """
+    A refused media path must reach the agent as written, not as an internal error.
+
+    FastMCP's stock error handler transforms every exception it sees and has no case
+    for `ToolError`, so it used to prefix these with "Internal error:" and send them
+    with the protocol's -32603 code. An agent told a correctable mistake is an internal
+    failure has no reason to correct it.
+    """
+    allowed = tmp_path / "allowed"
+    allowed.mkdir()
+    settings = GuardMCPSettings(
+        media_roots=[allowed], enable_tasks=False, mask_error_details=True
+    )
+    server = create_server(settings)
+
+    async with Client(server) as session:
+        with pytest.raises(Exception) as caught:
+            await session.call_tool("analyze_media", {"path": str(png)})
+
+    message = str(caught.value)
+    assert "GUARD_MCP_MEDIA_ROOTS" in message
+    assert "Internal error" not in message
+
+
+async def test_the_configuration_error_survives_the_stack(tmp_path, monkeypatch):
+    """The missing-key message is the one an agent needs verbatim to be actionable."""
+    monkeypatch.delenv("GUARD_API_KEY", raising=False)
+    server = create_server(
+        GuardMCPSettings(
+            media_roots=[tmp_path], enable_tasks=False, mask_error_details=True
+        )
+    )
+
+    async with Client(server) as session:
+        with pytest.raises(Exception) as caught:
+            await session.call_tool("list_spaces", {})
+
+    message = str(caught.value)
+    assert "GUARD_API_KEY" in message
+    assert "Internal error" not in message
+
+
 async def test_the_billable_budget_stops_a_runaway_agent(cloud_env, tmp_path, png):
     """Verify that the billable budget rate-limits runaway agents with a wait time."""
     settings = GuardMCPSettings(

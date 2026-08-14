@@ -17,8 +17,8 @@
 violent, or explicit content in your images and videos.
 
 **📸 One Core Tool:** The agent passes to the `analyze_media` tool a local file path and receives a list of detection 
-tasks, each scored from 0 to 100. Because video analysis can take time, it runs as an MCP background task so your chat 
-never freezes while waiting for results.
+tasks, each scored from 0 to 100. Because video analysis can take time, it can run as an MCP background task, so your 
+chat never freezes while waiting for results.
 
 **🔒 Built-in Security Controls:** You have full control over what the agent can access. The server only reads media 
 from directories you explicitly allow, ignores URL fetching, and enforces strict rate limits to protect your API budget 
@@ -90,7 +90,7 @@ processes media entirely on your machine, requires no API key, and makes no netw
 uv pip install "guard-mcp-server[local]"
 ```
 
-Once installed, set `GUARD_ENGINE=local` to make it the default, or pass `engine: "local"` on a single analyze_media 
+Once installed, set `GUARD_ENGINE=local` to make it the default, or pass `engine: "local"` on a single `analyze_media` 
 call.
 
 *Note: While the main Guard MCP server is licensed under Apache 2.0, the optional `guard-local-detector` dependency is 
@@ -120,7 +120,7 @@ Once connected, you can ask your AI agent to moderate or analyze files on your s
 A score runs from 0 to 100, where higher means more strongly detected. It is not a probability, and it is not a verdict 
 — the API does not classify media, and neither does this server. To judge a score the way your product does, the agent 
 will read `task_thresholds` from `get_space`: each detection task carries the `blur_threshold` and `hide_threshold` that 
-space applies, either of which may be `null` when it does not police that task.
+space applies, either of which is absent when it does not police that task.
 
 ## Available Tools & Resources
 
@@ -182,7 +182,7 @@ obtain and no network access at any point.
 uv sync --all-extras
 
 # try it by hand
-uv run fastmcp dev src/guard_mcp/server.py
+uv run fastmcp dev inspector guard_mcp -m
 
 # build for production
 uv build

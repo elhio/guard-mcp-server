@@ -5,7 +5,9 @@ Four concerns, ordered from outside in:
 
 1. Timing and logging, so a slow or failing call leaves a trace. Logs go to stderr,
    which matters because stdout carries the protocol on the stdio transport.
-2. Generic error handling, so nothing escapes as an unhandled exception.
+2. Generic error handling, so nothing escapes as an unhandled exception. It exempts
+   `ToolError`, because those messages were written for the agent and must arrive as
+   they were phrased rather than as an internal failure.
 3. Rate limiting, in two tiers. A global ceiling covers every message; a much tighter
    budget covers the tools that create billable activities, because an agent in a retry
    loop can otherwise spend real money quickly.
@@ -39,12 +41,55 @@ from guard_client import GuardError
 from .errors import to_tool_error
 from .settings import GuardMCPSettings
 
-__all__ = ["ActivityRateLimitMiddleware", "GuardErrorMiddleware", "build_middleware"]
+__all__ = [
+    "ActivityRateLimitMiddleware",
+    "GuardErrorHandlingMiddleware",
+    "GuardErrorMiddleware",
+    "build_middleware",
+]
 
 logger = logging.getLogger("guard_mcp")
 
 #: Tools that create a billable activity, and so deserve their own budget.
 BILLABLE_TOOLS = frozenset({"analyze_media"})
+
+
+class GuardErrorHandlingMiddleware(ErrorHandlingMiddleware):
+    """
+    FastMCP's error handler, with deliberate tool errors left intact.
+
+    Notes:
+        The stock middleware transforms every exception it sees, and its fallback
+        branch is `MCPError(-32603, "Internal error: ...")`. It has no case for
+        `ToolError`, so the messages this server raises on purpose — the media path
+        refusal, the rate limit, the missing API key, everything `to_tool_error`
+        produces — reached the agent labelled as internal failures. An agent reading
+        "Internal error" has no reason to believe the fault is its own and retries
+        something it should have corrected.
+
+        The code is wrong as well as the wording. `-32603` is a protocol-level error,
+        whereas a path outside the allowed roots is an ordinary tool result that
+        happens to have failed, and MCP carries that as content with `isError` set.
+        Passing `ToolError` through lets FastMCP report it that way.
+    """
+
+    def _transform_error(
+        self, error: Exception, context: MiddlewareContext
+    ) -> Exception:
+        """
+        Convert an exception to its MCP form, exempting `ToolError`.
+
+        Args:
+            error: The exception raised further in.
+            context: The message being handled.
+
+        Returns:
+            The error unchanged when it is a `ToolError` this server raised
+            deliberately, otherwise whatever the stock transformation makes of it.
+        """
+        if isinstance(error, ToolError):
+            return error
+        return super()._transform_error(error, context)
 
 
 class GuardErrorMiddleware(Middleware):
@@ -157,7 +202,7 @@ def build_middleware(settings: GuardMCPSettings) -> List[Middleware]:
             include_payloads=settings.include_payloads_in_logs,
             max_payload_length=settings.max_payload_log_length,
         ),
-        ErrorHandlingMiddleware(logger=logger, include_traceback=False),
+        GuardErrorHandlingMiddleware(logger=logger, include_traceback=False),
         RateLimitingMiddleware(
             max_requests_per_second=settings.max_requests_per_second,
             burst_capacity=settings.burst_capacity,

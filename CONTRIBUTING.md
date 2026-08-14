@@ -132,7 +132,7 @@ export GUARD_SPACE_ID=...
 export GUARD_MCP_MEDIA_ROOTS=/path/to/media
 
 # drive it by hand in the MCP Inspector
-uv run fastmcp dev src/guard_mcp/server.py
+uv run fastmcp dev inspector guard_mcp -m
 
 # or over stdio, the way a client will run it
 uv run guard-mcp

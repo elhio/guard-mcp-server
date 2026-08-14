@@ -50,6 +50,7 @@ local = ["guard-client[local]>=0.0.1"]
 
 [project.scripts]
 guard-mcp = "guard_mcp.server:main"
+guard-mcp-server = "guard_mcp.server:main"
 
 [project.urls]
 Homepage = "https://elhio.com/"

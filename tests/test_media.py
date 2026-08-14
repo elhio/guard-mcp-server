@@ -17,7 +17,9 @@ from guard_mcp.settings import GuardMCPSettings
 
 
 def test_accepts_a_file_inside_a_root(settings, png):
-    """Verify that a valid file inside an allowed root directory resolves successfully."""
+    """
+    Verify that a valid file inside an allowed root directory resolves successfully.
+    """
     assert resolve_media_path(str(png), settings=settings) == png.resolve()
 
 
@@ -40,9 +42,7 @@ def test_rejects_traversal_out_of_a_root(settings, tmp_path, tmp_path_factory):
         resolve_media_path(str(traversal), settings=settings)
 
 
-def test_rejects_a_symlink_pointing_out_of_a_root(
-    settings, tmp_path, tmp_path_factory
-):
+def test_rejects_a_symlink_pointing_out_of_a_root(settings, tmp_path, tmp_path_factory):
     """Verify that symlinks resolving to targets outside allowed roots are rejected."""
     outside = tmp_path_factory.mktemp("elsewhere") / "secret.png"
     outside.write_bytes(png_bytes())
