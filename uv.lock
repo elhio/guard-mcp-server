@@ -952,6 +952,7 @@ dependencies = [
     { name = "fastmcp-slim", extra = ["client", "server"] },
     { name = "fastmcp-tasks" },
     { name = "guard-client" },
+    { name = "httpx" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
 ]
@@ -981,6 +982,7 @@ requires-dist = [
     { name = "fastmcp-tasks", specifier = "==4.0.0b2" },
     { name = "guard-client", specifier = ">=0.0.1" },
     { name = "guard-client", extras = ["local"], marker = "extra == 'local'", specifier = ">=0.0.1" },
+    { name = "httpx", specifier = ">=0.28.1,<1" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pydantic-settings", specifier = ">=2.0" },
 ]

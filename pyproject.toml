@@ -41,6 +41,7 @@ dependencies = [
     "fastmcp-slim[client,server]==4.0.0b2",
     "fastmcp-tasks==4.0.0b2",
     "guard-client>=0.0.1",
+    "httpx>=0.28.1,<1",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
 ]
