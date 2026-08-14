@@ -1,6 +1,6 @@
 [project]
 name = "guard-mcp-server"
-version = "0.0.1rc1"
+version = "0.0.1"
 description = "An MCP server that enables AI agents to analyze media for moderation via the Guard API"
 readme = "README.md"
 requires-python = ">=3.10"
