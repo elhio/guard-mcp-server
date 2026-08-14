@@ -945,7 +945,7 @@ wheels = [
 
 [[package]]
 name = "guard-mcp-server"
-version = "0.0.1"
+version = "0.0.1rc1"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp", extra = ["tasks"] },
