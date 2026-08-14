@@ -1,0 +1,128 @@
+name: Validate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Lint code
+        run: uv run ruff check
+      - name: Check formatting
+        run: uv run ruff format --check
+      - name: Type check
+        run: uv run mypy
+      - name: Install the docs group
+        run: uv sync --locked --group docs
+      - name: Build the documentation
+        run: uv run python scripts/build_docs.py --strict
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+        include:
+          - os: macos-latest
+            python-version: '3.13'
+          - os: windows-latest
+            python-version: '3.13'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Run unit tests
+        run: uv run pytest -q
+
+  test-local-extra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          python-version: '3.12'
+      - name: Install dependencies with the local extra
+        run: uv sync --locked --extra local
+      - name: Run the local engine tests
+        run: uv run pytest tests/test_local.py -q
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          python-version: '3.12'
+      - name: Build the package
+        run: uv build
+      - name: Import the built wheel in a clean environment
+        run: |
+          uv run --no-project --isolated --with dist/*.whl \
+            python -c "import guard_mcp; print(guard_mcp.__version__)"
+      - name: Start the built server over stdio
+        run: |
+          uv run --no-project --isolated --with dist/*.whl \
+            python - <<'PY'
+          import asyncio
+          import os
+          import sys
+
+          from fastmcp.client import Client
+          from fastmcp.client.transports import StdioTransport
+
+
+          async def main() -> None:
+              transport = StdioTransport(
+                  command=sys.executable,
+                  args=["-m", "guard_mcp"],
+                  env={**os.environ, "GUARD_API_KEY": "ci-placeholder"},
+              )
+              async with Client(transport) as client:
+                  tools = await client.list_tools()
+              assert tools, "the server started but registered no tools"
+              print(f"{len(tools)} tools served")
+
+
+          asyncio.run(main())
+          PY
+      - name: Upload distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7
