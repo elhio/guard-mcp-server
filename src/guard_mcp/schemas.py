@@ -7,8 +7,8 @@ plumbing an agent cannot act on: presigned upload data, storage keys, media URLs
 and predictor ids.
 
 What they deliberately do not add is a decision. The API reports a score from 0 to 100
-per detection task and nothing else; whether a given score is acceptable is a policy
-this server has no way to know. `get_space` returns the space's own `task_thresholds`
+per detection target and nothing else; whether a given score is acceptable is a policy
+this server has no way to know. `get_space` returns the space's own `target_thresholds`
 for a caller that wants to apply one.
 
 Examples:
@@ -27,17 +27,17 @@ from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from guard_client import (
-    ActivityResultItem,
-    ActivityStatus,
     DetectionMatch,
     DetectionResult,
     Engine,
     MediaType,
+    PredictionResultItem,
+    PredictionStatus,
 )
 from pydantic import BaseModel, Field
 
 __all__ = [
-    "ActivitySummary",
+    "PredictionSummary",
     "AnalysisResult",
     "ListPage",
     "ResultItem",
@@ -46,14 +46,16 @@ __all__ = [
 
 class ResultItem(BaseModel):
     """
-    What one detection task reported about the media.
+    What one detection target reported about the media.
 
     Attributes:
-        task_id: The task this score belongs to. Cloud task ids come from the space;
-            on-device ids are derived from the label and do not match them.
-        score: How strongly the task matched, from 0 to 100. Higher means more strongly
-            detected. It is not a probability.
-        label: The task name, for example `Explicit`.
+        target_id: The target this score belongs to. Cloud target ids come from the
+            space; on-device ids are derived from the label and do not match them.
+        score: How strongly the target matched, from 0 to 100. Higher means more
+            strongly detected. It is not a probability.
+        label: What the engine calls the result. On-device it is the target name, for
+            example `Explicit`; the cloud API words a verdict in the request locale,
+            for example `Strong Signs of Explicit Content`.
         description: The engine's summary, when it gave one.
         detected: The engine's own boolean verdict, which it reaches with a
             per-category cut-off of its own. Only the on-device engine sets it; the
@@ -61,7 +63,7 @@ class ResultItem(BaseModel):
         matches: The evidence behind the score. On-device engine only.
     """
 
-    task_id: UUID
+    target_id: UUID
     score: int
     label: str
     description: Optional[str] = None
@@ -69,7 +71,7 @@ class ResultItem(BaseModel):
     matches: List[DetectionMatch] = Field(default_factory=list)
 
     @classmethod
-    def from_item(cls, item: ActivityResultItem) -> ResultItem:
+    def from_item(cls, item: PredictionResultItem) -> ResultItem:
         """
         Narrow one client result item to the fields worth showing.
 
@@ -80,7 +82,7 @@ class ResultItem(BaseModel):
             The same item without its storage key and media URL.
         """
         return cls(
-            task_id=item.task_id,
+            target_id=item.target_id,
             score=item.score,
             label=item.label,
             description=item.description,
@@ -95,14 +97,14 @@ class AnalysisResult(BaseModel):
 
     Attributes:
         engine: Which engine produced the result.
-        activity_id: The server side activity, for follow-up calls. Always `null` for
-            the on-device engine, which creates no activity.
+        prediction_id: The server side prediction, for follow-up calls. Always `null`
+            for the on-device engine, which creates no prediction.
         max_score: The highest score across all results, or 0 when there are none.
-        results: One entry per detection task that ran.
+        results: One entry per detection target that ran.
     """
 
     engine: Engine
-    activity_id: Optional[UUID] = None
+    prediction_id: Optional[UUID] = None
     max_score: int = 0
     results: List[ResultItem] = Field(default_factory=list)
 
@@ -120,34 +122,38 @@ class AnalysisResult(BaseModel):
         """
         return cls(
             engine=detection.engine,
-            activity_id=detection.activity_id,
+            prediction_id=detection.prediction_id,
             max_score=detection.max_score,
             results=[ResultItem.from_item(item) for item in detection.results],
         )
 
 
-class ActivitySummary(BaseModel):
+class PredictionSummary(BaseModel):
     """
-    A stored activity with its results, trimmed for an agent.
+    A stored prediction with its results, trimmed for an agent.
 
     Attributes:
-        id: The activity id.
+        id: The prediction id.
         status: One of `pending_upload`, `processing`, `completed`, `failed`,
             `canceled`.
-        created_at: When the activity was created.
+        created_at: When the prediction was created.
         media_type: The MIME type that was analyzed.
-        space_id: The space that processed it.
+        space_id: The space that processed it, or `null` for a lab's prediction.
         space_name: The name of that space.
+        lab_id: The lab that processed it, or `null` for a space's prediction.
+        lab_name: The name of that lab.
         payed_tokens: Tokens actually charged, once the API reported them.
-        results: One entry per detection task, empty until processing completed.
+        results: One entry per detection target, empty until processing completed.
     """
 
     id: UUID
-    status: ActivityStatus
+    status: PredictionStatus
     created_at: Optional[datetime] = None
     media_type: Optional[MediaType] = None
     space_id: Optional[UUID] = None
     space_name: Optional[str] = None
+    lab_id: Optional[UUID] = None
+    lab_name: Optional[str] = None
     payed_tokens: Optional[int] = None
     results: List[ResultItem] = Field(default_factory=list)
 

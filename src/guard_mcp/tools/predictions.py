@@ -1,14 +1,14 @@
 """
-Reading activities that already exist.
+Reading predictions that already exist.
 
 These tools are how an agent picks up work it could not wait for. When
-`analyze_media` times out it says which activity id to come back to; `get_activity`
-is where it comes back to. `list_activities` covers the review case, where someone
+`analyze_media` times out it says which prediction id to come back to; `get_prediction`
+is where it comes back to. `list_predictions` covers the review case, where someone
 wants to know what has been moderated recently and how it went.
 
 Examples:
     ```python
-    summary = await get_activity("0b3c...")
+    summary = await get_prediction("0b3c...")
     if summary.status == "completed":
         print([item.score for item in summary.results])
     ```
@@ -24,45 +24,45 @@ from guard_client import GuardError
 
 from ..client import GuardClientHandle, guard_client
 from ..errors import to_tool_error
-from ..schemas import ActivitySummary, ListPage
-from ..utils import clamp_limit, to_activity_summary, to_page
+from ..schemas import ListPage, PredictionSummary
+from ..utils import clamp_limit, to_page, to_prediction_summary
 
 __all__ = ["register"]
 
 
 def register(mcp: FastMCP) -> None:
     """
-    Attach the activity tools to a server.
+    Attach the prediction tools to a server.
 
     Args:
         mcp: The server to register on.
     """
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
-    async def get_activity(
-        activity_id: str,
+    async def get_prediction(
+        prediction_id: str,
         handle: GuardClientHandle = Shared(guard_client),
-    ) -> ActivitySummary:
+    ) -> PredictionSummary:
         """
-        Fetch one activity and the scores it produced.
+        Fetch one prediction and the scores it produced.
 
         Args:
-            activity_id: The activity to read.
+            prediction_id: The prediction to read.
 
         Returns:
-            The activity's status and, once processing has completed, one result per
-            detection task with its score from 0 to 100. `results` is empty while the
-            activity is still processing.
+            The prediction's status and, once processing has completed, one result per
+            detection target with its score from 0 to 100. `results` is empty while the
+            prediction is still processing.
         """
         client = handle.require()
         try:
-            detail = await client.activities.get(activity_id)
+            detail = await client.predictions.get(prediction_id)
         except GuardError as exc:
             raise to_tool_error(exc) from exc
-        return to_activity_summary(detail)
+        return to_prediction_summary(detail)
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
-    async def list_activities(
+    async def list_predictions(
         space_id: Optional[str] = None,
         statuses: Optional[List[str]] = None,
         start_date: Optional[str] = None,
@@ -72,25 +72,25 @@ def register(mcp: FastMCP) -> None:
         handle: GuardClientHandle = Shared(guard_client),
     ) -> ListPage:
         """
-        List recent activities, newest first.
+        List recent predictions, newest first.
 
         Args:
             space_id: Restrict to one space.
             statuses: Restrict to certain statuses. Valid values are
                 `pending_upload`, `processing`, `completed`, `failed`, `canceled`.
-            start_date: Only activities created on or after this ISO 8601 date.
-            end_date: Only activities created on or before this ISO 8601 date.
+            start_date: Only predictions created on or after this ISO 8601 date.
+            end_date: Only predictions created on or before this ISO 8601 date.
             limit: Page size, from 1 to 100.
             skip: How many records to skip, for paging.
 
         Returns:
-            A page of activity records without their results. Call get_activity for the
-            scores of any one of them.
+            A page of prediction records without their results. Call get_prediction for
+            the scores of any one of them.
         """
         client = handle.require()
         size = clamp_limit(limit)
         try:
-            page = await client.activities.list(
+            page = await client.predictions.list(
                 space_id=space_id,
                 statuses=statuses,
                 start_date=start_date,

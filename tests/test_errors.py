@@ -11,7 +11,6 @@ import httpx
 import pytest
 import respx
 from guard_client import (
-    ActivityFailedError,
     GuardAPIError,
     GuardAuthError,
     GuardConflictError,
@@ -27,10 +26,11 @@ from guard_client import (
     GuardUploadError,
     GuardValidationError,
     LocalEngineNotInstalledError,
+    PredictionFailedError,
     UnsupportedMediaTypeError,
 )
 
-from conftest import ACTIVITIES_URL, ACTIVITY_ID, SPACES_URL, create_response
+from conftest import PREDICTION_ID, PREDICTIONS_URL, SPACES_URL, create_response
 from guard_mcp.errors import to_tool_error
 
 
@@ -53,8 +53,8 @@ from guard_mcp.errors import to_tool_error
         (GuardConnectionError("unreachable"), "GUARD_BASE_URL"),
         (GuardUploadError("expired"), "submit the media again"),
         (GuardAPIError("teapot", status_code=418), "418"),
-        (GuardTimeoutError("too slow", activity_id=ACTIVITY_ID), "get_activity"),
-        (ActivityFailedError("bad", status="canceled"), "canceled"),
+        (GuardTimeoutError("too slow", prediction_id=PREDICTION_ID), "get_prediction"),
+        (PredictionFailedError("bad", status="canceled"), "canceled"),
         (LocalEngineNotInstalledError("absent"), "guard-mcp-server[local]"),
         (GuardLocalModelError("no model"), "GUARD_LOCAL_MODEL_PATH"),
         (GuardMediaDecodeError("garbage"), "could not decode"),
@@ -88,19 +88,19 @@ async def test_an_api_error_reaches_the_agent_through_a_tool(client):
 
 
 @respx.mock
-async def test_a_timeout_names_the_activity_to_come_back_to(client, png):
-    respx.post(ACTIVITIES_URL).mock(
+async def test_a_timeout_names_the_prediction_to_come_back_to(client, png):
+    respx.post(PREDICTIONS_URL).mock(
         return_value=httpx.Response(200, json=create_response())
     )
     respx.post("https://s3.test.invalid/bucket").mock(return_value=httpx.Response(204))
-    respx.post(f"{ACTIVITIES_URL}{ACTIVITY_ID}/confirm").mock(
+    respx.post(f"{PREDICTIONS_URL}/{PREDICTION_ID}/confirm").mock(
         return_value=httpx.Response(200, json=create_response(status="processing"))
     )
-    respx.get(f"{ACTIVITIES_URL}{ACTIVITY_ID}/status").mock(
+    respx.get(f"{PREDICTIONS_URL}/{PREDICTION_ID}/status").mock(
         return_value=httpx.Response(
             200,
             json={
-                "id": str(ACTIVITY_ID),
+                "id": str(PREDICTION_ID),
                 "status": "processing",
                 "user_id": None,
                 "account_id": None,
@@ -110,7 +110,7 @@ async def test_a_timeout_names_the_activity_to_come_back_to(client, png):
     )
 
     async with client as session:
-        with pytest.raises(Exception, match=str(ACTIVITY_ID)):
+        with pytest.raises(Exception, match=str(PREDICTION_ID)):
             await session.call_tool(
                 "analyze_media", {"path": str(png), "timeout": 0.01}
             )

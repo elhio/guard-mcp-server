@@ -17,11 +17,11 @@ from guard_mcp.settings import GuardMCPSettings, reset_settings
 EXPECTED_TOOLS = {
     "analyze_media",
     "estimate_tokens",
-    "get_activity",
-    "list_activities",
+    "get_prediction",
+    "list_predictions",
     "list_spaces",
     "get_space",
-    "list_detection_tasks",
+    "list_targets",
     "list_predictors",
     "submit_feedback",
     "share_result",
@@ -147,3 +147,11 @@ def test_settings_read_media_roots_from_a_delimited_string(monkeypatch, tmp_path
     settings = GuardMCPSettings()
 
     assert settings.resolved_media_roots() == (tmp_path.resolve(), other.resolve())
+
+
+def test_the_billable_budget_reads_its_env_name(monkeypatch):
+    """Verify the prediction budget is read from its `GUARD_MCP_` variable."""
+    monkeypatch.setenv("GUARD_MCP_PREDICTION_REQUESTS_PER_MINUTE", "7")
+    reset_settings()
+
+    assert GuardMCPSettings().prediction_requests_per_minute == 7.0

@@ -56,8 +56,8 @@ class GuardMCPSettings(BaseSettings):
         max_requests_per_second: Global token-bucket rate for every MCP message.
         burst_capacity: How many requests may arrive at once before the global limit
             applies.
-        activity_requests_per_minute: Stricter budget for the tools that create
-            billable activities.
+        prediction_requests_per_minute: Stricter budget for the tools that create
+            billable predictions.
         include_payloads_in_logs: Logs tool arguments and results. Useful when
             debugging an agent, noisy otherwise.
         max_payload_log_length: Truncation point for those logged payloads.
@@ -99,7 +99,7 @@ class GuardMCPSettings(BaseSettings):
 
     max_requests_per_second: float = 10.0
     burst_capacity: int = 20
-    activity_requests_per_minute: float = 30.0
+    prediction_requests_per_minute: float = 30.0
 
     include_payloads_in_logs: bool = False
     max_payload_log_length: int = 1000

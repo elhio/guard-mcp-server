@@ -17,7 +17,7 @@
 violent, or explicit content in your images and videos.
 
 **📸 One Core Tool:** The agent passes to the `analyze_media` tool a local file path and receives a list of detection 
-tasks, each scored from 0 to 100. Because video analysis can take time, it can run as an MCP background task, so your 
+targets, each scored from 0 to 100. Because video analysis can take time, it can run as an MCP background task, so your 
 chat never freezes while waiting for results.
 
 **🔒 Built-in Security Controls:** You have full control over what the agent can access. The server only reads media 
@@ -124,14 +124,14 @@ Once connected, you can ask your AI agent to moderate or analyze files on your s
 **🤖 Agent**
 > *(Calls `analyze_media` and `get_space` to check your rules)*
 > 
-> I've analyzed the image. It received a score of 87/100 for the `AI-generated` detection task, which classifies it as 
+> I've analyzed the image. It received a score of 87/100 for the `AI-generated` detection target, which classifies it as 
 > "Likely synthetic." Based on this high score, the model strongly indicates that this image was AI-generated rather 
 > than being a real photograph.
 
 A score runs from 0 to 100, where higher means more strongly detected. It is not a probability, and it is not a verdict 
 — the API does not classify media, and neither does this server. To judge a score the way your product does, the agent 
-will read `task_thresholds` from `get_space`: each detection task carries the `blur_threshold` and `hide_threshold` that 
-space applies, either of which is absent when it does not police that task.
+will read `target_thresholds` from `get_space`: each detection target carries the `blur_threshold` and `hide_threshold` that 
+space applies, either of which is absent when it does not police that target.
 
 ## Available Tools & Resources
 
@@ -140,10 +140,10 @@ configurations, and interact with the Guard platform.
 
 * `analyze_media`: Analyze one image or video. Runs as a background task.
 * `estimate_tokens`: Project the token cost of a file before spending it.
-* `get_activity`: Fetch a stored activity and its scores, by id.
-* `list_activities`: Page through recent activities.
+* `get_prediction`: Fetch a stored prediction and its scores, by id.
+* `list_predictions`: Page through recent predictions.
 * `list_spaces` / `get_space`: The spaces media can be analyzed in, and the cut-offs they apply.
-* `list_detection_tasks`: The detection tasks the platform runs, with their ids.
+* `list_targets`: The detection targets the platform runs, with their ids.
 * `list_predictors`: The models available to the account.
 * `submit_feedback`: Report that a result was right or wrong.
 * `share_result`: Create a link to one result that a person can open.
@@ -165,7 +165,7 @@ Every setting is an environment variable, documented in [`.env.example`](.env.ex
 | `GUARD_ENGINE` | `cloud` | `cloud` or `local`. |
 | `GUARD_MCP_MEDIA_ROOTS` | working directory | Directories media may be read from, separated like `PATH`. |
 | `GUARD_MCP_MAX_MEDIA_BYTES` | `104857600` | Largest accepted file. |
-| `GUARD_MCP_ACTIVITY_REQUESTS_PER_MINUTE` | `30` | Budget for the billable tools. |
+| `GUARD_MCP_PREDICTION_REQUESTS_PER_MINUTE` | `30` | Budget for the billable tools. |
 | `GUARD_MCP_ENABLE_TASKS` | `true` | Run `analyze_media` as a background task. |
 | `GUARD_MCP_DOCKET_URL` | `memory://` | Task backend. Use Redis for multi-worker HTTP. |
 

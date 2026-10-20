@@ -9,7 +9,7 @@ Four concerns, ordered from outside in:
    `ToolError`, because those messages were written for the agent and must arrive as
    they were phrased rather than as an internal failure.
 3. Rate limiting, in two tiers. A global ceiling covers every message; a much tighter
-   budget covers the tools that create billable activities, because an agent in a retry
+   budget covers the tools that create billable predictions, because an agent in a retry
    loop can otherwise spend real money quickly.
 4. Guard error translation, innermost, so `guard_client` exceptions become messages an
    agent can act on before anything more generic sees them.
@@ -42,7 +42,7 @@ from .errors import to_tool_error
 from .settings import GuardMCPSettings
 
 __all__ = [
-    "ActivityRateLimitMiddleware",
+    "PredictionRateLimitMiddleware",
     "GuardErrorHandlingMiddleware",
     "GuardErrorMiddleware",
     "build_middleware",
@@ -50,7 +50,7 @@ __all__ = [
 
 logger = logging.getLogger("guard_mcp")
 
-#: Tools that create a billable activity, and so deserve their own budget.
+#: Tools that create a billable prediction, and so deserve their own budget.
 BILLABLE_TOOLS = frozenset({"analyze_media"})
 
 
@@ -97,7 +97,7 @@ class GuardErrorMiddleware(Middleware):
     Turns `guard_client` exceptions into `ToolError` messages an agent can act on.
 
     This sits closest to the tool so it sees the original exception, with its status
-    code and activity id intact, before any generic handler flattens it.
+    code and prediction id intact, before any generic handler flattens it.
     """
 
     async def on_call_tool(
@@ -124,7 +124,7 @@ class GuardErrorMiddleware(Middleware):
             raise to_tool_error(exc) from exc
 
 
-class ActivityRateLimitMiddleware(Middleware):
+class PredictionRateLimitMiddleware(Middleware):
     """
     A second, tighter rate limit for the tools that spend tokens.
 
@@ -208,8 +208,8 @@ def build_middleware(settings: GuardMCPSettings) -> List[Middleware]:
             burst_capacity=settings.burst_capacity,
             global_limit=True,
         ),
-        ActivityRateLimitMiddleware(
-            requests_per_minute=settings.activity_requests_per_minute
+        PredictionRateLimitMiddleware(
+            requests_per_minute=settings.prediction_requests_per_minute
         ),
         GuardErrorMiddleware(),
     ]

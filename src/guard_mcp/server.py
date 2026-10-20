@@ -43,7 +43,7 @@ server, not a URL and not inline data, and the file must sit inside a directory 
 server is configured to read. Read the guard://config resource to see which directories
 those are.
 
-It returns one result per detection task, each with a score from 0 to 100 where higher
+It returns one result per detection target, each with a score from 0 to 100 where higher
 means more strongly detected, plus the highest of those scores. A score is a
 measurement, not a decision: these tools report what the models found and do not
 classify media as acceptable or unacceptable.
@@ -51,7 +51,7 @@ classify media as acceptable or unacceptable.
 A cloud analysis can take a minute for a video. analyze_media can run as a background
 task, so a client that asks for one gets a handle straight away and collects the result
 when it is ready, rather than waiting. If the wait times out either way, the error names
-an activity id: call get_activity with it later to collect the result.
+a prediction id: call get_prediction with it later to collect the result.
 
 Use estimate_tokens first when cost matters. Use submit_feedback when a human has
 established that a score was wrong.

@@ -16,7 +16,7 @@ from guard_mcp.server import create_server
 
 
 class _FakeEngine:
-    """An engine that answers the way the real one does, in fixed task order."""
+    """An engine that answers the way the real one does, in fixed target order."""
 
     def __init__(self, scores=(0.9, 0.1, 0.05)):
         self.scores = scores
@@ -64,7 +64,7 @@ async def test_local_analysis_needs_no_network(local_server, png):
 
     data = result.structured_content
     assert data["engine"] == "local"
-    assert data["activity_id"] is None
+    assert data["prediction_id"] is None
     assert data["max_score"] == 90
     assert [item["label"] for item in data["results"]] == [
         "AI-Generated",

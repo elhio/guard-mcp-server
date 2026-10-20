@@ -2,7 +2,7 @@
 The tools that actually analyze media.
 
 The `analyze_media` tool is the reason this server exists and the only tool declared as
-a background task. A cloud analysis creates an activity, uploads the bytes, and then
+a background task. A cloud analysis creates a prediction, uploads the bytes, and then
 polls until a GPU somewhere has finished with it, which for a video can take a minute
 or more. Run synchronously that blocks the agent's turn; run as a task the agent gets
 a handle immediately and collects the result when it is ready.
@@ -82,9 +82,9 @@ def register(mcp: FastMCP, settings: Optional[GuardMCPSettings] = None) -> None:
             timeout: Seconds to wait for processing. Defaults to the server setting.
 
         Returns:
-            One result per detection task, each with a score from 0 to 100 where higher
-            means more strongly detected, plus the highest of those scores and the id of
-            the activity that produced them.
+            One result per detection target, each with a score from 0 to 100 where
+            higher means more strongly detected, plus the highest of those scores and
+            the id of the prediction that produced them.
 
         Notes:
             This tool can run as a background task, and the calling client decides per
@@ -92,8 +92,8 @@ def register(mcp: FastMCP, settings: Optional[GuardMCPSettings] = None) -> None:
             polled for the `AnalysisResult`; ask for nothing and the result comes back
             directly, which for a video may take a minute or more.
 
-            Task ids differ between engines. The on-device engine derives its ids from
-            the task label, so they will not match the ids a space reports.
+            Target ids differ between engines. The on-device engine derives its ids
+            from the target name, so they will not match the ids a space reports.
         """
         client = handle.require()
 

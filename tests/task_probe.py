@@ -86,7 +86,7 @@ async def main() -> int:
 
     server = create_server(settings)
     tool = await server.get_tool("analyze_media")
-    plain = await server.get_tool("get_activity")
+    plain = await server.get_tool("get_prediction")
 
     async with Client(server) as session:
         result = await session.call_tool("analyze_media", {"path": str(media)})

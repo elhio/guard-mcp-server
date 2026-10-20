@@ -22,20 +22,20 @@ from guard_mcp.settings import GuardMCPSettings, reset_settings
 BASE_URL = "https://api.test.invalid"
 API_KEY = "test-key"
 SPACE_ID = UUID("11111111-1111-1111-1111-111111111111")
-ACTIVITY_ID = UUID("22222222-2222-2222-2222-222222222222")
-TASK_ID = UUID("33333333-3333-3333-3333-333333333333")
+PREDICTION_ID = UUID("22222222-2222-2222-2222-222222222222")
+TARGET_ID = UUID("33333333-3333-3333-3333-333333333333")
 ORG_ID = UUID("44444444-4444-4444-4444-444444444444")
 PREDICTOR_ID = UUID("55555555-5555-5555-5555-555555555555")
 REACTION_ID = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 SHARE_ID = UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
 UPLOAD_URL = "https://s3.test.invalid/bucket"
 
-ACTIVITIES_URL = f"{BASE_URL}/api/v1/activities/"
-SPACES_URL = f"{BASE_URL}/api/v1/spaces/"
-TASKS_URL = f"{BASE_URL}/api/v1/tasks/"
-PREDICTORS_URL = f"{BASE_URL}/api/v1/predictors/"
-REACTIONS_URL = f"{BASE_URL}/api/v1/reactions/"
-SHARES_URL = f"{BASE_URL}/api/v1/activities/shares/"
+PREDICTIONS_URL = f"{BASE_URL}/api/v1/predictions"
+SPACES_URL = f"{BASE_URL}/api/v1/spaces"
+TARGETS_URL = f"{BASE_URL}/api/v1/targets"
+PREDICTORS_URL = f"{BASE_URL}/api/v1/predictors"
+REACTIONS_URL = f"{BASE_URL}/api/v1/reactions"
+SHARES_URL = f"{BASE_URL}/api/v1/predictions/shares"
 
 
 def png_bytes() -> bytes:
@@ -65,16 +65,18 @@ def _now() -> str:
 
 
 def create_response(**overrides: Any) -> Dict[str, Any]:
-    """A mock response for an activity creation request."""
+    """A mock response for a prediction creation request."""
     payload: Dict[str, Any] = {
-        "id": str(ACTIVITY_ID),
+        "id": str(PREDICTION_ID),
         "status": "pending_upload",
         "created_at": _now(),
         "space_id": str(SPACE_ID),
+        "lab_id": None,
         "user_id": None,
         "account_id": None,
         "guest_id": None,
         "space_name": "Test Space",
+        "lab_name": None,
         "user_name": None,
         "account_name": None,
         "media_type": "image/png",
@@ -88,9 +90,9 @@ def create_response(**overrides: Any) -> Dict[str, Any]:
 
 
 def status_response(status: str = "completed", **overrides: Any) -> Dict[str, Any]:
-    """A mock status response for an activity."""
+    """A mock status response for a prediction."""
     payload: Dict[str, Any] = {
-        "id": str(ACTIVITY_ID),
+        "id": str(PREDICTION_ID),
         "status": status,
         "user_id": None,
         "account_id": None,
@@ -110,9 +112,9 @@ def confirm_response(**overrides: Any) -> Dict[str, Any]:
 
 
 def result_item(**overrides: Any) -> Dict[str, Any]:
-    """One entry of an activity result payload."""
+    """One entry of a prediction result payload."""
     payload: Dict[str, Any] = {
-        "task_id": str(TASK_ID),
+        "target_id": str(TARGET_ID),
         "score": 87,
         "label": "Deepfake",
         "description": "Likely synthetic",
@@ -128,15 +130,16 @@ def detail_response(
     results: Optional[List[Dict[str, Any]]] = None,
     **overrides: Any,
 ) -> Dict[str, Any]:
-    """A mock detail response for an activity."""
+    """A mock detail response for a prediction."""
     if results is None:
         results = [result_item()]
     payload: Dict[str, Any] = {
-        "id": str(ACTIVITY_ID),
+        "id": str(PREDICTION_ID),
         "status": status,
         "created_at": _now(),
         "updated_at": _now(),
         "space_id": str(SPACE_ID),
+        "lab_id": None,
         "predictor_id": str(uuid4()),
         "runner_id": None,
         "user_id": None,
@@ -147,6 +150,7 @@ def detail_response(
         "payed_tokens": 3,
         "result_payload": {"results": results},
         "space_name": "Test Space",
+        "lab_name": None,
         "predictor_name": "default",
         "runner_name": None,
         "user_name": None,
@@ -175,16 +179,16 @@ def space_response(**overrides: Any) -> Dict[str, Any]:
         "predictor_id": str(PREDICTOR_ID),
         "predictor_name": "default",
         "enabled_media": ["image", "video"],
-        "enabled_task_names": ["Deepfake", "Violence"],
+        "enabled_target_names": ["Deepfake", "Violence"],
     }
     payload.update(overrides)
     return payload
 
 
-def task_response(**overrides: Any) -> Dict[str, Any]:
-    """A mock response for a detection task."""
+def target_response(**overrides: Any) -> Dict[str, Any]:
+    """A mock response for a detection target."""
     payload: Dict[str, Any] = {
-        "id": str(TASK_ID),
+        "id": str(TARGET_ID),
         "status": "active",
         "name": "Deepfake",
         "description": "Detects synthetic media",
@@ -197,14 +201,18 @@ def task_response(**overrides: Any) -> Dict[str, Any]:
 def space_detail_response(**overrides: Any) -> Dict[str, Any]:
     """A mock detail response for a space."""
     payload = space_response()
-    payload.pop("enabled_task_names")
+    payload.pop("enabled_target_names")
     payload.update(
         {
             "predictor_multiplier": 3,
             "max_media_size": 52428800,
-            "enabled_tasks": [task_response()],
-            "task_thresholds": [
-                {"task_id": str(TASK_ID), "blur_threshold": 50, "hide_threshold": 80}
+            "enabled_targets": [target_response()],
+            "target_thresholds": [
+                {
+                    "target_id": str(TARGET_ID),
+                    "blur_threshold": 50,
+                    "hide_threshold": 80,
+                }
             ],
         }
     )
@@ -223,7 +231,7 @@ def predictor_response(**overrides: Any) -> Dict[str, Any]:
         "slug": "default-predictor",
         "url_id": "pred123",
         "supported_media": ["image", "video"],
-        "supported_task_ids": [str(TASK_ID)],
+        "supported_target_ids": [str(TARGET_ID)],
     }
     payload.update(overrides)
     return payload
@@ -234,8 +242,8 @@ def reaction_response(**overrides: Any) -> Dict[str, Any]:
     payload: Dict[str, Any] = {
         "id": str(REACTION_ID),
         "created_at": _now(),
-        "activity_id": str(ACTIVITY_ID),
-        "task_id": str(TASK_ID),
+        "prediction_id": str(PREDICTION_ID),
+        "target_id": str(TARGET_ID),
         "is_positive": True,
         "key_value": None,
         "description": None,
@@ -250,12 +258,12 @@ def share_response(**overrides: Any) -> Dict[str, Any]:
         "id": str(SHARE_ID),
         "created_at": _now(),
         "expired_at": (datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
-        "activity_id": str(ACTIVITY_ID),
-        "task_id": str(TASK_ID),
+        "prediction_id": str(PREDICTION_ID),
+        "target_id": str(TARGET_ID),
         "expires_in": 7,
         "share_url": "https://elhio.com/s/abc123",
         "media_url": "https://cdn.test.invalid/media/abc.png",
-        "task_name": "Deepfake",
+        "target_name": "Deepfake",
         "space_name": "Test Space",
         "result": result_item(),
     }
@@ -275,8 +283,8 @@ def mock_lifecycle(status: str = "completed", results=None):
     Wire every route a cloud analysis touches, and return the routes by name.
 
     Args:
-        status: The terminal status the activity reaches.
-        results: The result items the completed activity carries.
+        status: The terminal status the prediction reaches.
+        results: The result items the completed prediction carries.
 
     Returns:
         The respx routes, so a test can assert which ones were called.
@@ -285,17 +293,17 @@ def mock_lifecycle(status: str = "completed", results=None):
     import respx
 
     return {
-        "create": respx.post(ACTIVITIES_URL).mock(
+        "create": respx.post(PREDICTIONS_URL).mock(
             return_value=httpx.Response(200, json=create_response())
         ),
         "upload": respx.post(UPLOAD_URL).mock(return_value=httpx.Response(204)),
-        "confirm": respx.post(f"{ACTIVITIES_URL}{ACTIVITY_ID}/confirm").mock(
+        "confirm": respx.post(f"{PREDICTIONS_URL}/{PREDICTION_ID}/confirm").mock(
             return_value=httpx.Response(200, json=confirm_response())
         ),
-        "status": respx.get(f"{ACTIVITIES_URL}{ACTIVITY_ID}/status").mock(
+        "status": respx.get(f"{PREDICTIONS_URL}/{PREDICTION_ID}/status").mock(
             return_value=httpx.Response(200, json=status_response(status))
         ),
-        "detail": respx.get(f"{ACTIVITIES_URL}{ACTIVITY_ID}").mock(
+        "detail": respx.get(f"{PREDICTIONS_URL}/{PREDICTION_ID}").mock(
             return_value=httpx.Response(
                 200, json=detail_response(status, results=results)
             )
@@ -327,7 +335,7 @@ def no_sleep(monkeypatch):
     async def _async_sleep(_):
         return None
 
-    monkeypatch.setattr("guard_client.activities.asyncio.sleep", _async_sleep)
+    monkeypatch.setattr("guard_client.predictions.asyncio.sleep", _async_sleep)
 
 
 @pytest.fixture

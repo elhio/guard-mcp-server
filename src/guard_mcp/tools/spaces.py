@@ -1,7 +1,7 @@
 """
 Reading the spaces media can be analyzed in.
 
-A space decides which detection tasks run, which predictor backs them, and where its
+A space decides which detection targets run, which predictor backs them, and where its
 own blur and hide thresholds sit. An agent choosing a `space_id` for `analyze_media`
 looks here, as does one that wants to know what cut-offs this space applies to a score.
 
@@ -11,7 +11,7 @@ operation, and an agent has no business doing it on someone's behalf.
 Examples:
     ```python
     detail = await get_space("2c1f...")
-    print(detail["enabled_tasks"])
+    print(detail["enabled_targets"])
     ```
 """
 
@@ -55,7 +55,7 @@ def register(mcp: FastMCP) -> None:
             skip: How many records to skip, for paging.
 
         Returns:
-            A page of spaces, each with its id, name, and enabled task names.
+            A page of spaces, each with its id, name, and enabled target names.
         """
         client = handle.require()
         size = clamp_limit(limit)
@@ -71,13 +71,13 @@ def register(mcp: FastMCP) -> None:
         handle: GuardClientHandle = Shared(guard_client),
     ) -> Dict[str, Any]:
         """
-        Fetch one space, including the tasks it runs and its score thresholds.
+        Fetch one space, including the targets it runs and its score thresholds.
 
         Args:
             space_id: The space to read.
 
         Returns:
-            The space with its enabled detection tasks, predictor multiplier, maximum
+            The space with its enabled detection targets, predictor multiplier, maximum
             media size, and the blur and hide thresholds it applies to scores.
         """
         client = handle.require()

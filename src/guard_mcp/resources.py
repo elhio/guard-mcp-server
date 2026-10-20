@@ -68,7 +68,7 @@ def register(mcp: FastMCP) -> None:
         The spaces this account can analyze media in.
 
         Returns:
-            Every space, with its id, name, and enabled task names.
+            Every space, with its id, name, and enabled target names.
         """
         client = handle.require()
         try:

@@ -23,7 +23,7 @@ from typing import Optional
 from fastmcp import FastMCP
 
 from ..settings import GuardMCPSettings
-from . import activities, catalog, feedback, moderation, spaces
+from . import catalog, feedback, moderation, predictions, spaces
 
 __all__ = ["register_all"]
 
@@ -38,7 +38,7 @@ def register_all(mcp: FastMCP, settings: Optional[GuardMCPSettings] = None) -> N
             because whether `analyze_media` is a background task is a setting.
     """
     moderation.register(mcp, settings)
-    activities.register(mcp)
+    predictions.register(mcp)
     spaces.register(mcp)
     catalog.register(mcp)
     feedback.register(mcp)
