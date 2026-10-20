@@ -1,6 +1,6 @@
 [project]
 name = "guard-mcp-server"
-version = "0.0.1"
+version = "0.0.2"
 description = "An MCP server that enables AI agents to analyze media for moderation via the Guard API"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -37,17 +37,17 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "fastmcp[tasks]==4.0.0b2",
-    "fastmcp-slim[client,server]==4.0.0b2",
-    "fastmcp-tasks==4.0.0b2",
-    "guard-client>=0.0.1",
+    "fastmcp[tasks]>=4.1.1,<5",
+    "fastmcp-slim[client,server]>=4.1.1,<5",
+    "fastmcp-tasks>=4.1.1,<5",
+    "guard-client>=0.0.2",
     "httpx>=0.28.1,<1",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
 ]
 
 [project.optional-dependencies]
-local = ["guard-client[local]>=0.0.1"]
+local = ["guard-client[local]>=0.0.2"]
 
 [project.scripts]
 guard-mcp = "guard_mcp.server:main"
@@ -71,9 +71,6 @@ docs = [
     "griffe>=2.0.0",
     "tomli>=2.0.0; python_version < '3.11'",
 ]
-
-[tool.uv]
-prerelease = "if-necessary-or-explicit"
 
 [build-system]
 requires = ["hatchling"]

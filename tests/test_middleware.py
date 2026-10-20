@@ -14,8 +14,8 @@ from fastmcp.client import Client
 
 from conftest import SPACES_URL, mock_lifecycle, page_response, space_response
 from guard_mcp.middleware import (
-    ActivityRateLimitMiddleware,
     GuardErrorMiddleware,
+    PredictionRateLimitMiddleware,
     build_middleware,
 )
 from guard_mcp.server import create_server
@@ -27,7 +27,7 @@ def test_the_stack_ends_with_guard_translation(settings):
     stack = build_middleware(settings)
 
     assert isinstance(stack[-1], GuardErrorMiddleware)
-    assert any(isinstance(item, ActivityRateLimitMiddleware) for item in stack)
+    assert any(isinstance(item, PredictionRateLimitMiddleware) for item in stack)
 
 
 async def test_deliberate_tool_errors_are_not_relabelled(cloud_env, tmp_path, png):
@@ -79,7 +79,7 @@ async def test_the_billable_budget_stops_a_runaway_agent(cloud_env, tmp_path, pn
         media_roots=[tmp_path],
         enable_tasks=False,
         mask_error_details=False,
-        activity_requests_per_minute=1.0,
+        prediction_requests_per_minute=1.0,
     )
     server = create_server(settings)
 

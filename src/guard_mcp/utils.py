@@ -18,12 +18,12 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, Optional
 
-from guard_client import MAX_LIMIT, ActivityDetail
+from guard_client import MAX_LIMIT, PredictionDetail
 from pydantic import BaseModel
 
-from .schemas import ActivitySummary, ListPage, ResultItem
+from .schemas import ListPage, PredictionSummary, ResultItem
 
-__all__ = ["clamp_limit", "to_activity_summary", "to_dict", "to_page"]
+__all__ = ["clamp_limit", "to_prediction_summary", "to_dict", "to_page"]
 
 #: Fields that are large, short lived, or meaningless to an agent.
 _NOISE_FIELDS = frozenset({"media_key", "media_url", "result_payload"})
@@ -97,25 +97,27 @@ def clamp_limit(limit: Optional[int], *, default: int = 20) -> int:
     return max(1, min(int(limit), MAX_LIMIT))
 
 
-def to_activity_summary(detail: ActivityDetail) -> ActivitySummary:
+def to_prediction_summary(detail: PredictionDetail) -> PredictionSummary:
     """
-    Summarize a stored activity, including its results when it has them.
+    Summarize a stored prediction, including its results when it has them.
 
     Args:
-        detail: The activity as the API returned it.
+        detail: The prediction as the API returned it.
 
     Returns:
-        An `ActivitySummary`. `results` is empty while the activity is still processing,
-        or when it failed before producing any.
+        A `PredictionSummary`. `results` is empty while the prediction is still
+        processing, or when it failed before producing any.
     """
     payload = detail.result_payload
-    return ActivitySummary(
+    return PredictionSummary(
         id=detail.id,
         status=detail.status,
         created_at=detail.created_at,
         media_type=detail.media_type,
         space_id=detail.space_id,
         space_name=detail.space_name,
+        lab_id=detail.lab_id,
+        lab_name=detail.lab_name,
         payed_tokens=detail.payed_tokens,
         results=[ResultItem.from_item(item) for item in payload.results]
         if payload

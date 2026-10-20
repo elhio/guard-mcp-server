@@ -29,7 +29,6 @@ from typing import Optional
 from fastmcp.exceptions import ToolError
 from guard_client import (
     SUPPORTED_MEDIA_TYPES,
-    ActivityFailedError,
     GuardAPIError,
     GuardAuthError,
     GuardConflictError,
@@ -46,6 +45,7 @@ from guard_client import (
     GuardUploadError,
     GuardValidationError,
     LocalEngineNotInstalledError,
+    PredictionFailedError,
     UnsupportedMediaTypeError,
 )
 
@@ -137,16 +137,17 @@ def to_tool_error(exc: GuardError) -> ToolError:
             f"Unsupported media type: {exc}. Supported: {_supported_types()}."
         )
 
-    if isinstance(exc, ActivityFailedError):
+    if isinstance(exc, PredictionFailedError):
         return ToolError(
-            f"Processing ended as '{exc.status}' for activity {exc.activity_id}. "
-            "This activity will not produce a result. Submit the media again to retry."
+            f"Processing ended as '{exc.status}' for prediction {exc.prediction_id}. "
+            "This prediction will not produce a result. Submit the media again to "
+            "retry."
         )
     if isinstance(exc, GuardTimeoutError):
         return ToolError(
-            f"Processing did not finish in time for activity {exc.activity_id}. It may "
-            "still complete: call get_activity with that id in a little while, or "
-            "retry with a larger timeout."
+            f"Processing did not finish in time for prediction {exc.prediction_id}. It "
+            "may still complete: call get_prediction with that id in a little while, "
+            "or retry with a larger timeout."
         )
 
     if isinstance(exc, GuardAuthError):

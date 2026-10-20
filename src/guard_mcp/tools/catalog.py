@@ -1,18 +1,14 @@
 """
-Reading the catalog behind a space: detection tasks and predictors.
+Reading the catalog behind a space: detection targets and predictors.
 
-A detection task is one thing the platform looks for, such as violence. A predictor is
+A detection target is one thing the platform looks for, such as violence. A predictor is
 the model that runs them. Both are read-only reference data, and both matter when an
-agent needs to map a `task_id` in a result back to something it can name, or when it is
-explaining why a space costs what it costs.
-
-The tool is called `list_detection_tasks` rather than `list_tasks` on purpose. MCP has
-its own notion of a background task, and two unrelated meanings of the same word in one
-tool list is a reliable way to confuse a model.
+agent needs to map a `target_id` in a result back to something it can name, or when it
+is explaining why a space costs what it costs.
 
 Examples:
     ```python
-    page = await list_detection_tasks()
+    page = await list_targets()
     print([item["name"] for item in page.items])
     ```
 """
@@ -40,27 +36,27 @@ def register(mcp: FastMCP) -> None:
     """
 
     @mcp.tool(annotations={"readOnlyHint": True, "openWorldHint": True})
-    async def list_detection_tasks(
+    async def list_targets(
         limit: int = 20,
         skip: int = 0,
         handle: GuardClientHandle = Shared(guard_client),
     ) -> ListPage:
         """
-        List the detection tasks the platform can run, such as violence or explicit.
+        List the detection targets the platform can run, such as violence or explicit.
 
         Args:
             limit: Page size, from 1 to 100.
             skip: How many records to skip, for paging.
 
         Returns:
-            A page of tasks with their ids, names and descriptions. These ids are what
+            A page of targets with their ids, names and descriptions. These ids are what
             a cloud moderation result reports, and what submit_feedback and
             share_result expect.
         """
         client = handle.require()
         size = clamp_limit(limit)
         try:
-            page = await client.tasks.list(skip=skip, limit=size)
+            page = await client.targets.list(skip=skip, limit=size)
         except GuardError as exc:
             raise to_tool_error(exc) from exc
         return to_page(page, skip=skip)
@@ -80,7 +76,7 @@ def register(mcp: FastMCP) -> None:
 
         Returns:
             A page of predictors with their token multipliers, supported media types
-            and the detection tasks each one can run.
+            and the detection targets each one can run.
         """
         client = handle.require()
         size = clamp_limit(limit)
