@@ -37,9 +37,9 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "fastmcp[tasks]==4.0.0b2",
-    "fastmcp-slim[client,server]==4.0.0b2",
-    "fastmcp-tasks==4.0.0b2",
+    "fastmcp[tasks]>=4.1.1,<5",
+    "fastmcp-slim[client,server]>=4.1.1,<5",
+    "fastmcp-tasks>=4.1.1,<5",
     "guard-client>=0.0.2",
     "httpx>=0.28.1,<1",
     "pydantic>=2.0",
@@ -71,9 +71,6 @@ docs = [
     "griffe>=2.0.0",
     "tomli>=2.0.0; python_version < '3.11'",
 ]
-
-[tool.uv]
-prerelease = "if-necessary-or-explicit"
 
 [build-system]
 requires = ["hatchling"]

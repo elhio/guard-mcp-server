@@ -42,15 +42,11 @@ You can run the server directly via `uvx` or install it using `uv`:
 
 ```bash
 # run it without installing
-uvx --with "fastmcp==4.0.0b2" --with "fastmcp-slim==4.0.0b2" \
-    --with "fastmcp-tasks==4.0.0b2" guard-mcp-server
+uvx guard-mcp-server
 
 # or install it locally
-uv pip install "guard-mcp-server" "fastmcp==4.0.0b2" "fastmcp-slim==4.0.0b2" \
-  "fastmcp-tasks==4.0.0b2"
+uv pip install guard-mcp-server
 ```
-
-*Note: These three pins are necessary until FastMCP 4 is final.*
 
 ### Claude Code
 
@@ -59,8 +55,7 @@ claude mcp add guard \
   --env GUARD_API_KEY=your-key \
   --env GUARD_SPACE_ID=your-space-id \
   --env GUARD_MCP_MEDIA_ROOTS=/path/to/your/media \
-  -- uvx --with "fastmcp==4.0.0b2" --with "fastmcp-slim==4.0.0b2" \
-     --with "fastmcp-tasks==4.0.0b2" guard-mcp-server
+  -- uvx guard-mcp-server
 ```
 
 ### Claude Desktop, Cursor, and other JSON clients
@@ -72,12 +67,7 @@ Add the following to your MCP client configuration file (e.g., `claude_desktop_c
   "mcpServers": {
     "guard": {
       "command": "uvx",
-      "args": [
-        "--with", "fastmcp==4.0.0b2",
-        "--with", "fastmcp-slim==4.0.0b2",
-        "--with", "fastmcp-tasks==4.0.0b2",
-        "guard-mcp-server"
-      ],
+      "args": ["guard-mcp-server"],
       "env": {
         "GUARD_API_KEY": "your-key",
         "GUARD_SPACE_ID": "your-space-id",
@@ -97,8 +87,7 @@ For local testing, development, or small open-source projects, you can install t
 processes media entirely on your machine, requires no API key, and makes no network calls.
 
 ```bash
-uv pip install "guard-mcp-server[local]" "fastmcp==4.0.0b2" "fastmcp-slim==4.0.0b2" \
-  "fastmcp-tasks==4.0.0b2"
+uv pip install "guard-mcp-server[local]"
 ```
 
 Once installed, set `GUARD_ENGINE=local` to make it the default, or pass `engine: "local"` on a single `analyze_media` 
